@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta</title>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .contenedor {
+            max-width: 600px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .tarjeta {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 26px;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .opciones {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .opcion {
+            border: 0;
+            border-radius: 12px;
+            padding: 17px 5px;
+            font-size: 20px;
+            background: #e5e7eb;
+            cursor: pointer;
+        }
+
+        .opcion:hover {
+            background: #dbe1ea;
+        }
+
+        .opcion.seleccionado {
+            background: #2d8cff;
+            color: white;
+        }
+
+        .opcion:disabled {
+            cursor: not-allowed;
+            opacity: .6;
+        }
+
+        #enviar {
+            width: 100%;
+            border: 0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 25px;
+            background: #2d8cff;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #estado {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #f3f4f6;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <div class="tarjeta">
+
+        <h1>
+            ¿Cuántas personas están viendo esta reunión físicamente contigo?
+        </h1>
+
+        <p class="subtitulo">
+            Selecciona una opción.
+        </p>
+
+        <div class="opciones">
+
+            <button class="opcion" data-numero="1">1</button>
+            <button class="opcion" data-numero="2">2</button>
+            <button class="opcion" data-numero="3">3</button>
+            <button class="opcion" data-numero="4">4</button>
+            <button class="opcion" data-numero="5">5</button>
+
+            <button class="opcion" data-numero="6">6</button>
+            <button class="opcion" data-numero="7">7</button>
+            <button class="opcion" data-numero="8">8</button>
+            <button class="opcion" data-numero="9">9</button>
+            <button class="opcion" data-numero="10">10</button>
+
+        </div>
+
+        <button id="enviar">
+            Enviar respuesta
+        </button>
+
+        <div id="estado">
+            Esperando a que el anfitrión lance la encuesta...
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const socket = io();
+
+    let seleccion = null;
+    let encuestaActiva = false;
+    let yaRespondio = false;
+
+    const botones =
+        document.querySelectorAll(".opcion");
+
+    const enviar =
+        document.getElementById("enviar");
+
+    const estado =
+        document.getElementById("estado");
+
+
+    // Seleccionar número
+    botones.forEach((boton) => {
+
+        boton.addEventListener("click", () => {
+
+            if (!encuestaActiva || yaRespondio) {
+                return;
+            }
+
+            botones.forEach((b) => {
+                b.classList.remove("seleccionado");
+            });
+
+            boton.classList.add("seleccionado");
+
+            seleccion =
+                Number(boton.dataset.numero);
+        });
+
+    });
+
+
+    // Enviar respuesta
+    enviar.addEventListener("click", () => {
+
+        if (!encuestaActiva) {
+            estado.textContent =
+                "La encuesta todavía no ha sido lanzada.";
+            return;
+        }
+
+        if (yaRespondio) {
+            estado.textContent =
+                "Ya enviaste tu respuesta.";
+            return;
+        }
+
+        if (seleccion === null) {
+            estado.textContent =
+                "Selecciona un número primero.";
+            return;
+        }
+
+        socket.emit(
+            "enviarRespuesta",
+            seleccion
+        );
+    });
+
+
+    // Estado inicial
+    socket.on("estadoEncuesta", (datos) => {
+
+        encuestaActiva =
+            datos.encuestaActiva;
+
+        yaRespondio =
+            datos.yaRespondio;
+
+        actualizarPantalla();
+
+    });
+
+
+    // Encuesta lanzada
+    socket.on("encuestaLanzada", () => {
+
+        encuestaActiva = true;
+        yaRespondio = false;
+        seleccion = null;
+
+        botones.forEach((boton) => {
+            boton.disabled = false;
+            boton.classList.remove("seleccionado");
+        });
+
+        estado.textContent =
+            "🟢 ¡La encuesta está activa! Elige un número.";
+    });
+
+
+    // Encuesta cerrada
+    socket.on("encuestaCerrada", () => {
+
+        encuestaActiva = false;
+
+        estado.textContent =
+            "🔴 La encuesta ha terminado.";
+
+        botones.forEach((boton) => {
+            boton.disabled = true;
+        });
+    });
+
+
+    // Respuesta aceptada
+    socket.on("respuestaAceptada", (datos) => {
+
+        yaRespondio = true;
+
+        botones.forEach((boton) => {
+            boton.disabled = true;
+        });
+
+        estado.textContent =
+            `✅ Respuesta enviada: ${datos.cantidad}`;
+    });
+
+
+    // Error
+    socket.on("errorEncuesta", (mensaje) => {
+
+        estado.textContent =
+            "⚠️ " + mensaje;
+
+    });
+
+
+    function actualizarPantalla() {
+
+        if (yaRespondio) {
+
+            estado.textContent =
+                "✅ Ya enviaste tu respuesta.";
+
+            botones.forEach((boton) => {
+                boton.disabled = true;
+            });
+
+            return;
+        }
+
+        if (encuestaActiva) {
+
+            estado.textContent =
+                "🟢 ¡La encuesta está activa! Elige un número.";
+
+            botones.forEach((boton) => {
+                boton.disabled = false;
+            });
+
+        } else {
+
+            estado.textContent =
+                "Esperando a que el anfitrión lance la encuesta.";
+
+            botones.forEach((boton) => {
+                boton.disabled = true;
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

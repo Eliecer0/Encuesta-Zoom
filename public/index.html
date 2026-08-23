@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta Zoom</title>
+
+    <script src="https://appssdk.zoom.us/sdk.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 700px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .tarjeta {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 26px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .subtitulo {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        .fila-estadisticas {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .estadistica {
+            background: #f3f4f6;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .numero {
+            display: block;
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .botones {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .opcion {
+            border: none;
+            border-radius: 12px;
+            padding: 15px 5px;
+            font-size: 20px;
+            cursor: pointer;
+            background: #e5e7eb;
+            transition: 0.15s;
+        }
+
+        .opcion:hover {
+            transform: translateY(-2px);
+        }
+
+        .opcion.seleccionado {
+            background: #2d8cff;
+            color: white;
+        }
+
+        button.accion {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        .principal {
+            background: #2d8cff;
+            color: white;
+        }
+
+        .secundario {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .peligro {
+            background: #ef4444;
+            color: white;
+        }
+
+        .estado {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #eef2ff;
+        }
+
+        .oculto {
+            display: none;
+        }
+
+        .centro {
+            text-align: center;
+        }
+
+        .gran-total {
+            font-size: 55px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .etiqueta {
+            color: #6b7280;
+        }
+
+        @media (max-width: 500px) {
+            .fila-estadisticas {
+                grid-template-columns: 1fr;
+            }
+
+            .botones {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .gran-total {
+                font-size: 45px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <!-- PANEL DEL ADMINISTRADOR -->
+    <section id="panelAdmin" class="tarjeta oculto">
+
+        <h1>Panel del administrador</h1>
+
+        <p class="subtitulo">
+            Controla la encuesta y observa el total de personas.
+        </p>
+
+        <div class="fila-estadisticas">
+
+            <div class="estadistica">
+                <span class="etiqueta">Respuestas</span>
+                <span id="totalRespuestas" class="numero">0</span>
+            </div>
+
+            <div class="estadistica">
+                <span class="etiqueta">Personas físicas</span>
+                <span id="totalPersonasAdmin" class="numero">0</span>
+            </div>
+
+        </div>
+
+        <button
+            id="btnLanzar"
+            class="accion principal">
+            Lanzar encuesta
+        </button>
+
+        <button
+            id="btnCerrar"
+            class="accion peligro">
+            Cerrar encuesta
+        </button>
+
+        <div id="estadoAdmin" class="estado">
+            Encuesta preparada.
+        </div>
+
+    </section>
+
+
+    <!-- PANTALLA DEL PARTICIPANTE -->
+    <section id="panelParticipante" class="tarjeta oculto">
+
+        <h1>
+            ¿Cuántas personas están viendo esta reunión físicamente contigo?
+        </h1>
+
+        <p class="subtitulo">
+            Selecciona una opción y pulsa enviar.
+        </p>
+
+        <div id="opciones" class="botones">
+
+            <button class="opcion" data-valor="1">1</button>
+            <button class="opcion" data-valor="2">2</button>
+            <button class="opcion" data-valor="3">3</button>
+            <button class="opcion" data-valor="4">4</button>
+            <button class="opcion" data-valor="5">5</button>
+
+            <button class="opcion" data-valor="6">6</button>
+            <button class="opcion" data-valor="7">7</button>
+            <button class="opcion" data-valor="8">8</button>
+            <button class="opcion" data-valor="9">9</button>
+            <button class="opcion" data-valor="10">10</button>
+
+        </div>
+
+        <button
+            id="btnEnviar"
+            class="accion principal">
+            Enviar respuesta
+        </button>
+
+        <div id="estadoParticipante" class="estado">
+            Esperando a que el anfitrión lance la encuesta...
+        </div>
+
+    </section>
+
+
+    <!-- PANTALLA INICIAL -->
+    <section id="panelInicio" class="tarjeta centro">
+
+        <h1>Encuesta de personas</h1>
+
+        <p class="subtitulo">
+            Conectando con Zoom...
+        </p>
+
+        <div id="estadoConexion" class="estado">
+            Preparando la aplicación.
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+    let esAdministrador = false;
+    let encuestaActiva = false;
+    let respuestaSeleccionada = null;
+
+    let totalRespuestas = 0;
+    let totalPersonas = 0;
+
+
+    // Elementos
+    const panelInicio = document.getElementById("panelInicio");
+    const panelAdmin = document.getElementById("panelAdmin");
+    const panelParticipante = document.getElementById("panelParticipante");
+
+    const estadoConexion = document.getElementById("estadoConexion");
+    const estadoAdmin = document.getElementById("estadoAdmin");
+    const estadoParticipante = document.getElementById("estadoParticipante");
+
+    const totalRespuestasElemento =
+        document.getElementById("totalRespuestas");
+
+    const totalPersonasElemento =
+        document.getElementById("totalPersonasAdmin");
+
+    const opciones =
+        document.querySelectorAll(".opcion");
+
+
+    // -----------------------------
+    // Seleccionar respuesta
+    // -----------------------------
+
+    opciones.forEach((boton) => {
+
+        boton.addEventListener("click", () => {
+
+            if (!encuestaActiva) {
+                return;
+            }
+
+            opciones.forEach((b) => {
+                b.classList.remove("seleccionado");
+            });
+
+            boton.classList.add("seleccionado");
+
+            respuestaSeleccionada =
+                Number(boton.dataset.valor);
+        });
+
+    });
+
+
+    // -----------------------------
+    // Enviar respuesta
+    // -----------------------------
+
+    document
+        .getElementById("btnEnviar")
+        .addEventListener("click", () => {
+
+            if (!encuestaActiva) {
+
+                estadoParticipante.textContent =
+                    "La encuesta todavía no está activa.";
+
+                return;
+            }
+
+            if (respuestaSeleccionada === null) {
+
+                estadoParticipante.textContent =
+                    "Selecciona un número primero.";
+
+                return;
+            }
+
+            // Por ahora solamente simulamos el envío.
+            // Después lo conectaremos con nuestro servidor.
+
+            estadoParticipante.textContent =
+                `Respuesta enviada: ${respuestaSeleccionada}`;
+
+            opciones.forEach((b) => {
+                b.disabled = true;
+            });
+
+        });
+
+
+    // -----------------------------
+    // Lanzar encuesta
+    // -----------------------------
+
+    document
+        .getElementById("btnLanzar")
+        .addEventListener("click", async () => {
+
+            encuestaActiva = true;
+
+            estadoAdmin.textContent =
+                "Encuesta lanzada. Los participantes ya pueden responder.";
+
+            estadoParticipante.textContent =
+                "La encuesta está activa.";
+
+            try {
+
+                if (typeof zoomSdk !== "undefined") {
+
+                    await zoomSdk.startCollaborate();
+
+                    console.log(
+                        "Collaborate Mode iniciado."
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.log(
+                    "Collaborate Mode todavía no está disponible:",
+                    error
+                );
+
+            }
+
+        });
+
+
+    // -----------------------------
+    // Cerrar encuesta
+    // -----------------------------
+
+    document
+        .getElementById("btnCerrar")
+        .addEventListener("click", async () => {
+
+            encuestaActiva = false;
+
+            estadoAdmin.textContent =
+                "Encuesta cerrada.";
+
+            estadoParticipante.textContent =
+                "La encuesta ha terminado.";
+
+            try {
+
+                if (typeof zoomSdk !== "undefined") {
+
+                    await zoomSdk.endCollaborate();
+
+                    console.log(
+                        "Collaborate Mode terminado."
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.log(
+                    "No se pudo cerrar Collaborate Mode:",
+                    error
+                );
+
+            }
+
+        });
+
+
+    // -----------------------------
+    // Inicialización de Zoom
+    // -----------------------------
+
+    async function iniciarZoom() {
+
+        try {
+
+            if (typeof zoomSdk === "undefined") {
+
+                throw new Error(
+                    "Zoom Apps SDK no está disponible."
+                );
+
+            }
+
+            await zoomSdk.config({
+
+                capabilities: [
+                    "getRunningContext",
+                    "getMeetingContext",
+                    "getMeetingParticipants",
+                    "onParticipantChange",
+                    "startCollaborate",
+                    "joinCollaborate",
+                    "endCollaborate",
+                    "leaveCollaborate",
+                    "onCollaborateChange"
+                ]
+
+            });
+
+
+            const contexto =
+                await zoomSdk.getRunningContext();
+
+            console.log(
+                "Contexto de Zoom:",
+                contexto
+            );
+
+
+            /*
+             * Más adelante reemplazaremos esta parte
+             * por la comprobación real del rol mediante
+             * el sistema de permisos de Zoom.
+             */
+
+            esAdministrador = true;
+
+
+            panelInicio.classList.add("oculto");
+
+            if (esAdministrador) {
+
+                panelAdmin.classList.remove("oculto");
+
+            } else {
+
+                panelParticipante.classList.remove("oculto");
+
+            }
+
+            estadoConexion.textContent =
+                "Conectado a Zoom.";
+
+        } catch (error) {
+
+            console.error(
+                "Error iniciando Zoom:",
+                error
+            );
+
+            /*
+             * Para poder seguir probando la interfaz
+             * desde tu navegador normal.
+             */
+
+            panelInicio.classList.add("oculto");
+            panelParticipante.classList.remove("oculto");
+
+            encuestaActiva = true;
+
+            estadoParticipante.textContent =
+                "Modo de prueba del navegador.";
+
+        }
+
+    }
+
+
+    iniciarZoom();
+
+</script>
+
+</body>
+</html>

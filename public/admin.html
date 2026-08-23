@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrador - Encuesta Zoom</title>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .contenedor {
+            max-width: 650px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .tarjeta {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .subtitulo {
+            color: #6b7280;
+        }
+
+        .estadisticas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .estadistica {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .estadistica span {
+            display: block;
+            color: #6b7280;
+        }
+
+        .estadistica strong {
+            display: block;
+            font-size: 40px;
+            margin-top: 8px;
+        }
+
+        .total {
+            background: #eef2ff;
+            border-radius: 18px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .total small {
+            display: block;
+            color: #6b7280;
+        }
+
+        .total strong {
+            display: block;
+            font-size: 60px;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            border: 0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        #lanzar {
+            background: #2d8cff;
+            color: white;
+        }
+
+        #cerrar {
+            background: #ef4444;
+            color: white;
+        }
+
+        #estado {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #f3f4f6;
+            text-align: center;
+        }
+
+        @media (max-width: 500px) {
+            .estadisticas {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <div class="tarjeta">
+
+        <h1>Panel del administrador</h1>
+
+        <p class="subtitulo">
+            Control de la encuesta de la reunión.
+        </p>
+
+        <div class="estadisticas">
+
+            <div class="estadistica">
+                <span>Respuestas</span>
+                <strong id="respuestas">0</strong>
+            </div>
+
+            <div class="estadistica">
+                <span>Personas físicas</span>
+                <strong id="personas">0</strong>
+            </div>
+
+        </div>
+
+        <div class="total">
+            <small>Total estimado de personas</small>
+            <strong id="total">0</strong>
+        </div>
+
+        <button id="lanzar">
+            🚀 Lanzar encuesta
+        </button>
+
+        <button id="cerrar">
+            🛑 Cerrar encuesta
+        </button>
+
+        <div id="estado">
+            Encuesta cerrada.
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const socket = io();
+
+    const respuestas = document.getElementById("respuestas");
+    const personas = document.getElementById("personas");
+    const total = document.getElementById("total");
+    const estado = document.getElementById("estado");
+
+    const lanzar = document.getElementById("lanzar");
+    const cerrar = document.getElementById("cerrar");
+
+
+    function actualizarResultados(datos) {
+        respuestas.textContent = datos.totalRespuestas;
+        personas.textContent = datos.totalPersonas;
+        total.textContent = datos.totalPersonas;
+    }
+
+
+    lanzar.addEventListener("click", () => {
+        socket.emit("lanzarEncuesta");
+    });
+
+
+    cerrar.addEventListener("click", () => {
+        socket.emit("cerrarEncuesta");
+    });
+
+
+    socket.on("estadoEncuesta", (datos) => {
+
+        actualizarResultados(datos);
+
+        if (datos.encuestaActiva) {
+            estado.textContent = "🟢 Encuesta activa.";
+        } else {
+            estado.textContent = "⚪ Encuesta cerrada.";
+        }
+    });
+
+
+    socket.on("encuestaLanzada", () => {
+        estado.textContent = "🟢 Encuesta lanzada. Esperando respuestas...";
+    });
+
+
+    socket.on("encuestaCerrada", () => {
+        estado.textContent = "🔴 Encuesta cerrada.";
+    });
+
+
+    socket.on("resultadosActualizados", (datos) => {
+        actualizarResultados(datos);
+    });
+</script>
+
+</body>
+</html>
