@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encuesta</title>
+    <title id="pageTitle">Encuesta</title>
 
     <script src="/socket.io/socket.io.js"></script>
 
@@ -19,10 +19,26 @@
             color: #1f2937;
         }
 
+        .barra-superior {
+            display: flex;
+            justify-content: flex-end;
+            padding: 15px 20px 0;
+        }
+
+        .idioma {
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 9px 12px;
+            background: white;
+            color: #1f2937;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
         .contenedor {
             max-width: 600px;
             margin: auto;
-            padding: 25px;
+            padding: 15px 25px 25px;
         }
 
         .tarjeta {
@@ -96,39 +112,47 @@
 
 <body>
 
+<div class="barra-superior">
+    <select id="idioma" class="idioma" aria-label="Idioma">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+    </select>
+</div>
+
 <div class="contenedor">
 
     <div class="tarjeta">
 
-        <h1>
+        <h1 data-i18n="question">
             ¿Cuántas personas están viendo esta reunión físicamente contigo?
         </h1>
 
-        <p class="subtitulo">
+        <p class="subtitulo" data-i18n="selectOption">
             Selecciona una opción.
         </p>
 
         <div class="opciones">
-
             <button class="opcion" data-numero="1">1</button>
             <button class="opcion" data-numero="2">2</button>
             <button class="opcion" data-numero="3">3</button>
             <button class="opcion" data-numero="4">4</button>
             <button class="opcion" data-numero="5">5</button>
-
             <button class="opcion" data-numero="6">6</button>
             <button class="opcion" data-numero="7">7</button>
             <button class="opcion" data-numero="8">8</button>
             <button class="opcion" data-numero="9">9</button>
             <button class="opcion" data-numero="10">10</button>
-
         </div>
 
-        <button id="enviar">
+        <button id="enviar" data-i18n="send">
             Enviar respuesta
         </button>
 
-        <div id="estado">
+        <div id="estado" data-i18n="waiting">
             Esperando a que el anfitrión lance la encuesta...
         </div>
 
@@ -138,172 +162,211 @@
 
 <script>
     const socket = io();
-
     let seleccion = null;
     let encuestaActiva = false;
     let yaRespondio = false;
+    let currentState = "waiting";
 
-    const botones =
-        document.querySelectorAll(".opcion");
+    const botones = document.querySelectorAll(".opcion");
+    const enviar = document.getElementById("enviar");
+    const estado = document.getElementById("estado");
+    const idioma = document.getElementById("idioma");
+    const pageTitle = document.getElementById("pageTitle");
 
-    const enviar =
-        document.getElementById("enviar");
+    const translations = {
+        es: {
+            pageTitle: "Encuesta",
+            question: "¿Cuántas personas están viendo esta reunión físicamente contigo?",
+            selectOption: "Selecciona una opción.",
+            send: "Enviar respuesta",
+            waiting: "Esperando a que el anfitrión lance la encuesta...",
+            active: "La encuesta está activa. Elige un número.",
+            ended: "La encuesta ha terminado.",
+            sent: "Respuesta enviada: {n}",
+            already: "Ya enviaste tu respuesta.",
+            notLaunched: "La encuesta todavía no ha sido lanzada.",
+            selectFirst: "Selecciona un número primero.",
+            error: "{message}"
+        },
+        en: {
+            pageTitle: "Survey",
+            question: "How many people are physically watching this meeting with you?",
+            selectOption: "Select an option.",
+            send: "Submit response",
+            waiting: "Waiting for the host to launch the survey...",
+            active: "The survey is active. Choose a number.",
+            ended: "The survey has ended.",
+            sent: "Response submitted: {n}",
+            already: "You have already submitted your response.",
+            notLaunched: "The survey has not been launched yet.",
+            selectFirst: "Select a number first.",
+            error: "{message}"
+        },
+        de: {
+            pageTitle: "Umfrage",
+            question: "Wie viele Personen sehen diese Besprechung physisch mit Ihnen?",
+            selectOption: "Wählen Sie eine Option.",
+            send: "Antwort senden",
+            waiting: "Warten auf den Start der Umfrage durch den Gastgeber...",
+            active: "Die Umfrage ist aktiv. Wählen Sie eine Zahl.",
+            ended: "Die Umfrage ist beendet.",
+            sent: "Antwort gesendet: {n}",
+            already: "Sie haben Ihre Antwort bereits gesendet.",
+            notLaunched: "Die Umfrage wurde noch nicht gestartet.",
+            selectFirst: "Wählen Sie zuerst eine Zahl.",
+            error: "{message}"
+        },
+        fr: {
+            pageTitle: "Sondage",
+            question: "Combien de personnes regardent physiquement cette réunion avec vous ?",
+            selectOption: "Sélectionnez une option.",
+            send: "Envoyer la réponse",
+            waiting: "En attente du lancement du sondage par l'hôte...",
+            active: "Le sondage est actif. Choisissez un nombre.",
+            ended: "Le sondage est terminé.",
+            sent: "Réponse envoyée : {n}",
+            already: "Vous avez déjà envoyé votre réponse.",
+            notLaunched: "Le sondage n'a pas encore été lancé.",
+            selectFirst: "Sélectionnez d'abord un nombre.",
+            error: "{message}"
+        },
+        it: {
+            pageTitle: "Sondaggio",
+            question: "Quante persone stanno guardando fisicamente questa riunione con te?",
+            selectOption: "Seleziona un'opzione.",
+            send: "Invia risposta",
+            waiting: "In attesa che l'host avvii il sondaggio...",
+            active: "Il sondaggio è attivo. Scegli un numero.",
+            ended: "Il sondaggio è terminato.",
+            sent: "Risposta inviata: {n}",
+            already: "Hai già inviato la tua risposta.",
+            notLaunched: "Il sondaggio non è ancora stato avviato.",
+            selectFirst: "Seleziona prima un numero.",
+            error: "{message}"
+        },
+        pt: {
+            pageTitle: "Pesquisa",
+            question: "Quantas pessoas estão assistindo fisicamente a esta reunião com você?",
+            selectOption: "Selecione uma opção.",
+            send: "Enviar resposta",
+            waiting: "Aguardando o anfitrião iniciar a pesquisa...",
+            active: "A pesquisa está ativa. Escolha um número.",
+            ended: "A pesquisa terminou.",
+            sent: "Resposta enviada: {n}",
+            already: "Você já enviou sua resposta.",
+            notLaunched: "A pesquisa ainda não foi iniciada.",
+            selectFirst: "Selecione um número primeiro.",
+            error: "{message}"
+        }
+    };
 
-    const estado =
-        document.getElementById("estado");
+    function t(key, values = {}) {
+        let text = translations[idioma.value][key];
+        Object.entries(values).forEach(([name, value]) => {
+            text = text.replace(`{${name}}`, value);
+        });
+        return text;
+    }
 
-
-    // Seleccionar número
-    botones.forEach((boton) => {
-
-        boton.addEventListener("click", () => {
-
-            if (!encuestaActiva || yaRespondio) {
-                return;
-            }
-
-            botones.forEach((b) => {
-                b.classList.remove("seleccionado");
-            });
-
-            boton.classList.add("seleccionado");
-
-            seleccion =
-                Number(boton.dataset.numero);
+    function applyLanguage() {
+        document.documentElement.lang = idioma.value;
+        pageTitle.textContent = t("pageTitle");
+        document.querySelectorAll("[data-i18n]").forEach((element) => {
+            element.textContent = t(element.dataset.i18n);
         });
 
+        if (currentState === "active") estado.textContent = t("active");
+        else if (currentState === "ended") estado.textContent = t("ended");
+        else if (currentState === "sent") estado.textContent = t("sent", { n: seleccion });
+        else if (currentState === "already") estado.textContent = t("already");
+        else estado.textContent = t("waiting");
+    }
+
+    idioma.addEventListener("change", applyLanguage);
+
+    botones.forEach((boton) => {
+        boton.addEventListener("click", () => {
+            if (!encuestaActiva || yaRespondio) return;
+            botones.forEach((b) => b.classList.remove("seleccionado"));
+            boton.classList.add("seleccionado");
+            seleccion = Number(boton.dataset.numero);
+        });
     });
 
-
-    // Enviar respuesta
     enviar.addEventListener("click", () => {
-
         if (!encuestaActiva) {
-            estado.textContent =
-                "La encuesta todavía no ha sido lanzada.";
+            currentState = "notLaunched";
+            estado.textContent = t("notLaunched");
             return;
         }
-
         if (yaRespondio) {
-            estado.textContent =
-                "Ya enviaste tu respuesta.";
+            currentState = "already";
+            estado.textContent = t("already");
             return;
         }
-
         if (seleccion === null) {
-            estado.textContent =
-                "Selecciona un número primero.";
+            currentState = "selectFirst";
+            estado.textContent = t("selectFirst");
             return;
         }
-
-        socket.emit(
-            "enviarRespuesta",
-            seleccion
-        );
+        socket.emit("enviarRespuesta", seleccion);
     });
 
-
-    // Estado inicial
     socket.on("estadoEncuesta", (datos) => {
-
-        encuestaActiva =
-            datos.encuestaActiva;
-
-        yaRespondio =
-            datos.yaRespondio;
-
+        encuestaActiva = datos.encuestaActiva;
+        yaRespondio = datos.yaRespondio;
         actualizarPantalla();
-
     });
 
-
-    // Encuesta lanzada
     socket.on("encuestaLanzada", () => {
-
         encuestaActiva = true;
         yaRespondio = false;
         seleccion = null;
-
+        currentState = "active";
         botones.forEach((boton) => {
             boton.disabled = false;
             boton.classList.remove("seleccionado");
         });
-
-        estado.textContent =
-            "🟢 ¡La encuesta está activa! Elige un número.";
+        applyLanguage();
     });
 
-
-    // Encuesta cerrada
     socket.on("encuestaCerrada", () => {
-
         encuestaActiva = false;
-
-        estado.textContent =
-            "🔴 La encuesta ha terminado.";
-
-        botones.forEach((boton) => {
-            boton.disabled = true;
-        });
+        currentState = "ended";
+        estado.textContent = t("ended");
+        botones.forEach((boton) => boton.disabled = true);
     });
 
-
-    // Respuesta aceptada
     socket.on("respuestaAceptada", (datos) => {
-
         yaRespondio = true;
-
-        botones.forEach((boton) => {
-            boton.disabled = true;
-        });
-
-        estado.textContent =
-            `✅ Respuesta enviada: ${datos.cantidad}`;
+        currentState = "sent";
+        botones.forEach((boton) => boton.disabled = true);
+        estado.textContent = t("sent", { n: datos.cantidad });
     });
 
-
-    // Error
     socket.on("errorEncuesta", (mensaje) => {
-
-        estado.textContent =
-            "⚠️ " + mensaje;
-
+        estado.textContent = t("error", { message: mensaje });
     });
-
 
     function actualizarPantalla() {
-
         if (yaRespondio) {
-
-            estado.textContent =
-                "✅ Ya enviaste tu respuesta.";
-
-            botones.forEach((boton) => {
-                boton.disabled = true;
-            });
-
+            currentState = "already";
+            estado.textContent = t("already");
+            botones.forEach((boton) => boton.disabled = true);
             return;
         }
-
         if (encuestaActiva) {
-
-            estado.textContent =
-                "🟢 ¡La encuesta está activa! Elige un número.";
-
-            botones.forEach((boton) => {
-                boton.disabled = false;
-            });
-
+            currentState = "active";
+            estado.textContent = t("active");
+            botones.forEach((boton) => boton.disabled = false);
         } else {
-
-            estado.textContent =
-                "Esperando a que el anfitrión lance la encuesta.";
-
-            botones.forEach((boton) => {
-                boton.disabled = true;
-            });
+            currentState = "waiting";
+            estado.textContent = t("waiting");
+            botones.forEach((boton) => boton.disabled = true);
         }
     }
+
+    applyLanguage();
 </script>
 
 </body>
