@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrador - Encuesta Zoom</title>
+    <title id="pageTitle">Administrador - Encuesta Zoom</title>
 
     <script src="/socket.io/socket.io.js"></script>
 
@@ -19,10 +19,26 @@
             color: #1f2937;
         }
 
+        .barra-superior {
+            display: flex;
+            justify-content: flex-end;
+            padding: 15px 20px 0;
+        }
+
+        .idioma {
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 9px 12px;
+            background: white;
+            color: #1f2937;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
         .contenedor {
             max-width: 650px;
             margin: auto;
-            padding: 25px;
+            padding: 15px 25px 25px;
         }
 
         .tarjeta {
@@ -84,7 +100,7 @@
             margin-top: 5px;
         }
 
-        button {
+        button.accion {
             width: 100%;
             border: 0;
             border-radius: 12px;
@@ -122,44 +138,55 @@
 
 <body>
 
+<div class="barra-superior">
+    <select id="idioma" class="idioma" aria-label="Idioma">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+    </select>
+</div>
+
 <div class="contenedor">
 
     <div class="tarjeta">
 
-        <h1>Panel del administrador</h1>
+        <h1 data-i18n="adminTitle">Panel del administrador</h1>
 
-        <p class="subtitulo">
+        <p class="subtitulo" data-i18n="adminSubtitle">
             Control de la encuesta de la reunión.
         </p>
 
         <div class="estadisticas">
 
             <div class="estadistica">
-                <span>Respuestas</span>
+                <span data-i18n="responses">Respuestas</span>
                 <strong id="respuestas">0</strong>
             </div>
 
             <div class="estadistica">
-                <span>Personas físicas</span>
+                <span data-i18n="physicalPeople">Personas físicas</span>
                 <strong id="personas">0</strong>
             </div>
 
         </div>
 
         <div class="total">
-            <small>Total estimado de personas</small>
+            <small data-i18n="estimatedTotal">Total estimado de personas</small>
             <strong id="total">0</strong>
         </div>
 
-        <button id="lanzar">
-            🚀 Lanzar encuesta
+        <button id="lanzar" class="accion" data-i18n="launch">
+            Lanzar encuesta
         </button>
 
-        <button id="cerrar">
-            🛑 Cerrar encuesta
+        <button id="cerrar" class="accion" data-i18n="close">
+            Cerrar encuesta
         </button>
 
-        <div id="estado">
+        <div id="estado" data-i18n="closed">
             Encuesta cerrada.
         </div>
 
@@ -174,10 +201,116 @@
     const personas = document.getElementById("personas");
     const total = document.getElementById("total");
     const estado = document.getElementById("estado");
-
     const lanzar = document.getElementById("lanzar");
     const cerrar = document.getElementById("cerrar");
+    const idioma = document.getElementById("idioma");
+    const pageTitle = document.getElementById("pageTitle");
 
+    const translations = {
+        es: {
+            pageTitle: "Administrador - Encuesta Zoom",
+            adminTitle: "Panel del administrador",
+            adminSubtitle: "Control de la encuesta de la reunión.",
+            responses: "Respuestas",
+            physicalPeople: "Personas físicas",
+            estimatedTotal: "Total estimado de personas",
+            launch: "Lanzar encuesta",
+            close: "Cerrar encuesta",
+            closed: "Encuesta cerrada.",
+            active: "Encuesta activa.",
+            launched: "Encuesta lanzada. Esperando respuestas..."
+        },
+        en: {
+            pageTitle: "Admin - Zoom Survey",
+            adminTitle: "Administrator Panel",
+            adminSubtitle: "Control the meeting survey.",
+            responses: "Responses",
+            physicalPeople: "People physically present",
+            estimatedTotal: "Estimated total people",
+            launch: "Launch survey",
+            close: "Close survey",
+            closed: "Survey closed.",
+            active: "Survey active.",
+            launched: "Survey launched. Waiting for responses..."
+        },
+        de: {
+            pageTitle: "Administrator - Zoom-Umfrage",
+            adminTitle: "Administrationsbereich",
+            adminSubtitle: "Steuerung der Umfrage für das Meeting.",
+            responses: "Antworten",
+            physicalPeople: "Anwesende Personen",
+            estimatedTotal: "Geschätzte Gesamtzahl der Personen",
+            launch: "Umfrage starten",
+            close: "Umfrage schließen",
+            closed: "Umfrage geschlossen.",
+            active: "Umfrage aktiv.",
+            launched: "Umfrage gestartet. Warte auf Antworten..."
+        },
+        fr: {
+            pageTitle: "Administrateur - Sondage Zoom",
+            adminTitle: "Panneau d'administration",
+            adminSubtitle: "Contrôle du sondage de la réunion.",
+            responses: "Réponses",
+            physicalPeople: "Personnes présentes physiquement",
+            estimatedTotal: "Total estimé de personnes",
+            launch: "Lancer le sondage",
+            close: "Fermer le sondage",
+            closed: "Sondage fermé.",
+            active: "Sondage actif.",
+            launched: "Sondage lancé. En attente des réponses..."
+        },
+        it: {
+            pageTitle: "Amministratore - Sondaggio Zoom",
+            adminTitle: "Pannello amministratore",
+            adminSubtitle: "Controllo del sondaggio della riunione.",
+            responses: "Risposte",
+            physicalPeople: "Persone presenti fisicamente",
+            estimatedTotal: "Totale stimato delle persone",
+            launch: "Avvia sondaggio",
+            close: "Chiudi sondaggio",
+            closed: "Sondaggio chiuso.",
+            active: "Sondaggio attivo.",
+            launched: "Sondaggio avviato. In attesa delle risposte..."
+        },
+        pt: {
+            pageTitle: "Administrador - Pesquisa Zoom",
+            adminTitle: "Painel do administrador",
+            adminSubtitle: "Controle da pesquisa da reunião.",
+            responses: "Respostas",
+            physicalPeople: "Pessoas presentes fisicamente",
+            estimatedTotal: "Total estimado de pessoas",
+            launch: "Iniciar pesquisa",
+            close: "Encerrar pesquisa",
+            closed: "Pesquisa encerrada.",
+            active: "Pesquisa ativa.",
+            launched: "Pesquisa iniciada. Aguardando respostas..."
+        }
+    };
+
+    let currentState = "closed";
+
+    function t(key) {
+        return translations[idioma.value][key];
+    }
+
+    function applyLanguage() {
+        document.documentElement.lang = idioma.value;
+        pageTitle.textContent = t("pageTitle");
+
+        document.querySelectorAll("[data-i18n]").forEach((element) => {
+            element.textContent = t(element.dataset.i18n);
+        });
+
+        if (currentState === "active") {
+            estado.textContent = t("active");
+        } else if (currentState === "launched") {
+            estado.textContent = t("launched");
+        } else {
+            estado.textContent = t("closed");
+        }
+    }
+
+    idioma.addEventListener("change", applyLanguage);
 
     function actualizarResultados(datos) {
         respuestas.textContent = datos.totalRespuestas;
@@ -185,42 +318,35 @@
         total.textContent = datos.totalPersonas;
     }
 
-
     lanzar.addEventListener("click", () => {
         socket.emit("lanzarEncuesta");
     });
-
 
     cerrar.addEventListener("click", () => {
         socket.emit("cerrarEncuesta");
     });
 
-
     socket.on("estadoEncuesta", (datos) => {
-
         actualizarResultados(datos);
-
-        if (datos.encuestaActiva) {
-            estado.textContent = "🟢 Encuesta activa.";
-        } else {
-            estado.textContent = "⚪ Encuesta cerrada.";
-        }
+        currentState = datos.encuestaActiva ? "active" : "closed";
+        applyLanguage();
     });
-
 
     socket.on("encuestaLanzada", () => {
-        estado.textContent = "🟢 Encuesta lanzada. Esperando respuestas...";
+        currentState = "launched";
+        applyLanguage();
     });
-
 
     socket.on("encuestaCerrada", () => {
-        estado.textContent = "🔴 Encuesta cerrada.";
+        currentState = "closed";
+        applyLanguage();
     });
-
 
     socket.on("resultadosActualizados", (datos) => {
         actualizarResultados(datos);
     });
+
+    applyLanguage();
 </script>
 
 </body>
