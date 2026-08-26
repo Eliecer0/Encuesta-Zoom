@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta Zoom</title>
+
+    <script src="https://appssdk.zoom.us/sdk.min.js"></script>
+</head>
+
+<body>
+
+<p id="estado">Iniciando aplicación...</p>
+
+<script>
+async function iniciar() {
+    try {
+        await zoomSdk.config({
+            capabilities: [
+                "getRunningContext",
+                "getMeetingContext"
+            ]
+        });
+
+        /*
+         * Todavía no vamos a decidir el rol aquí.
+         * Primero comprobamos que Zoom pueda abrir
+         * correctamente nuestra aplicación.
+         */
+
+        document.getElementById("estado").textContent =
+            "Aplicación de Zoom iniciada correctamente.";
+
+    } catch (error) {
+        console.error(error);
+
+        document.getElementById("estado").textContent =
+            "Esta página debe ejecutarse dentro de Zoom.";
+    }
+}
+
+iniciar();
+</script>
+
+</body>
+</html>
