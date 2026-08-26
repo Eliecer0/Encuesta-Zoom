@@ -4,68 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">Administrador - Encuesta Zoom</title>
-
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
             font-family: Arial, sans-serif;
             background: #f4f6f8;
             color: #1f2937;
         }
 
-        .barra-superior {
-            display: flex;
-            justify-content: flex-end;
-            padding: 15px 20px 0;
+        .contenedor {
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .tarjeta {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+        }
+
+        .cabecera {
+            padding-right: 105px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 27px;
+        }
+
+        .subtitulo {
+            margin: 0;
+            color: #6b7280;
         }
 
         .idioma {
+            position: absolute;
+            top: 22px;
+            right: 22px;
             border: 1px solid #d1d5db;
             border-radius: 10px;
-            padding: 9px 12px;
+            padding: 8px 10px;
             background: white;
             color: #1f2937;
             font-size: 14px;
             cursor: pointer;
         }
 
-        .contenedor {
-            max-width: 650px;
-            margin: auto;
-            padding: 15px 25px 25px;
-        }
-
-        .tarjeta {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.08);
-        }
-
-        h1 {
-            margin-top: 0;
-        }
-
-        .subtitulo {
-            color: #6b7280;
-        }
-
         .estadisticas {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 25px 0;
+            gap: 14px;
+            margin: 24px 0;
         }
 
         .estadistica {
             background: #f3f4f6;
-            padding: 20px;
+            padding: 18px;
             border-radius: 15px;
             text-align: center;
         }
@@ -73,20 +78,21 @@
         .estadistica span {
             display: block;
             color: #6b7280;
+            font-size: 14px;
         }
 
         .estadistica strong {
             display: block;
-            font-size: 40px;
-            margin-top: 8px;
+            font-size: 38px;
+            margin-top: 7px;
         }
 
         .total {
             background: #eef2ff;
             border-radius: 18px;
-            padding: 25px;
+            padding: 21px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .total small {
@@ -96,16 +102,16 @@
 
         .total strong {
             display: block;
-            font-size: 60px;
-            margin-top: 5px;
+            font-size: 52px;
+            margin-top: 3px;
         }
 
         button.accion {
             width: 100%;
             border: 0;
             border-radius: 12px;
-            padding: 16px;
-            margin-top: 12px;
+            padding: 15px;
+            margin-top: 10px;
             font-size: 17px;
             cursor: pointer;
         }
@@ -121,56 +127,54 @@
         }
 
         #estado {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 16px;
+            padding: 13px;
             border-radius: 12px;
             background: #f3f4f6;
             text-align: center;
+            color: #374151;
         }
 
-        @media (max-width: 500px) {
+        @media (max-width: 520px) {
             .estadisticas {
                 grid-template-columns: 1fr;
+            }
+
+            .cabecera {
+                padding-right: 0;
+                padding-top: 45px;
             }
         }
     </style>
 </head>
-
 <body>
 
-<div class="barra-superior">
-    <select id="idioma" class="idioma" aria-label="Idioma">
-        <option value="es">Español</option>
-        <option value="en">English</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-        <option value="it">Italiano</option>
-        <option value="pt">Português</option>
-    </select>
-</div>
-
 <div class="contenedor">
-
     <div class="tarjeta">
 
-        <h1 data-i18n="adminTitle">Panel del administrador</h1>
+        <select id="idioma" class="idioma" aria-label="Idioma">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+        </select>
 
-        <p class="subtitulo" data-i18n="adminSubtitle">
-            Control de la encuesta de la reunión.
-        </p>
+        <div class="cabecera">
+            <h1 data-i18n="adminTitle">Panel del administrador</h1>
+            <p class="subtitulo" data-i18n="adminSubtitle">Control de la encuesta de la reunión.</p>
+        </div>
 
         <div class="estadisticas">
-
             <div class="estadistica">
                 <span data-i18n="responses">Respuestas</span>
                 <strong id="respuestas">0</strong>
             </div>
-
             <div class="estadistica">
                 <span data-i18n="physicalPeople">Personas físicas</span>
                 <strong id="personas">0</strong>
             </div>
-
         </div>
 
         <div class="total">
@@ -178,25 +182,15 @@
             <strong id="total">0</strong>
         </div>
 
-        <button id="lanzar" class="accion" data-i18n="launch">
-            Lanzar encuesta
-        </button>
+        <button id="lanzar" class="accion" data-i18n="launch">Lanzar encuesta</button>
+        <button id="cerrar" class="accion" data-i18n="close">Cerrar encuesta</button>
 
-        <button id="cerrar" class="accion" data-i18n="close">
-            Cerrar encuesta
-        </button>
-
-        <div id="estado" data-i18n="closed">
-            Encuesta cerrada.
-        </div>
-
+        <div id="estado" data-i18n="closed">Encuesta cerrada.</div>
     </div>
-
 </div>
 
 <script>
     const socket = io();
-
     const respuestas = document.getElementById("respuestas");
     const personas = document.getElementById("personas");
     const total = document.getElementById("total");
@@ -296,7 +290,6 @@
     function applyLanguage() {
         document.documentElement.lang = idioma.value;
         pageTitle.textContent = t("pageTitle");
-
         document.querySelectorAll("[data-i18n]").forEach((element) => {
             element.textContent = t(element.dataset.i18n);
         });
@@ -342,10 +335,7 @@
         applyLanguage();
     });
 
-    socket.on("resultadosActualizados", (datos) => {
-        actualizarResultados(datos);
-    });
-
+    socket.on("resultadosActualizados", actualizarResultados);
     applyLanguage();
 </script>
 
