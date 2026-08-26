@@ -4,56 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">Encuesta</title>
-
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
             font-family: Arial, sans-serif;
             background: #f4f6f8;
             color: #1f2937;
         }
 
-        .barra-superior {
-            display: flex;
-            justify-content: flex-end;
-            padding: 15px 20px 0;
+        .contenedor {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .tarjeta {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 27px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.08);
         }
 
         .idioma {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             border: 1px solid #d1d5db;
             border-radius: 10px;
-            padding: 9px 12px;
+            padding: 8px 10px;
             background: white;
             color: #1f2937;
             font-size: 14px;
             cursor: pointer;
         }
 
-        .contenedor {
-            max-width: 600px;
-            margin: auto;
-            padding: 15px 25px 25px;
-        }
-
-        .tarjeta {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+        .cabecera {
+            padding: 46px 8px 0;
         }
 
         h1 {
+            margin: 0;
             text-align: center;
-            font-size: 26px;
+            font-size: 25px;
+            line-height: 1.25;
         }
 
         .subtitulo {
+            margin: 11px 0 0;
             text-align: center;
             color: #6b7280;
         }
@@ -61,79 +67,69 @@
         .opciones {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 25px;
+            gap: 9px;
+            margin-top: 23px;
         }
 
         .opcion {
             border: 0;
-            border-radius: 12px;
-            padding: 17px 5px;
-            font-size: 20px;
+            border-radius: 11px;
+            padding: 14px 5px;
+            font-size: 19px;
             background: #e5e7eb;
+            color: #111827;
             cursor: pointer;
         }
 
-        .opcion:hover {
-            background: #dbe1ea;
-        }
-
-        .opcion.seleccionado {
-            background: #2d8cff;
-            color: white;
-        }
-
-        .opcion:disabled {
-            cursor: not-allowed;
-            opacity: .6;
-        }
+        .opcion:hover:not(:disabled) { background: #dbe1ea; }
+        .opcion.seleccionado { background: #2d8cff; color: white; }
+        .opcion:disabled { cursor: not-allowed; opacity: .6; }
 
         #enviar {
             width: 100%;
             border: 0;
             border-radius: 12px;
-            padding: 16px;
-            margin-top: 25px;
+            padding: 15px;
+            margin-top: 22px;
             background: #2d8cff;
             color: white;
-            font-size: 18px;
+            font-size: 17px;
             cursor: pointer;
         }
 
         #estado {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 15px;
+            padding: 12px;
             border-radius: 12px;
             background: #f3f4f6;
             text-align: center;
+            color: #374151;
+        }
+
+        @media (max-width: 520px) {
+            .cabecera { padding-left: 0; padding-right: 0; }
+            h1 { font-size: 23px; }
         }
     </style>
 </head>
 
 <body>
-
-<div class="barra-superior">
-    <select id="idioma" class="idioma" aria-label="Idioma">
-        <option value="es">Español</option>
-        <option value="en">English</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-        <option value="it">Italiano</option>
-        <option value="pt">Português</option>
-    </select>
-</div>
-
 <div class="contenedor">
+    <div id="tarjeta" class="tarjeta" hidden>
 
-    <div class="tarjeta">
+        <select id="idioma" class="idioma" aria-label="Idioma">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+        </select>
 
-        <h1 data-i18n="question">
-            ¿Cuántas personas están viendo esta reunión físicamente contigo?
-        </h1>
-
-        <p class="subtitulo" data-i18n="selectOption">
-            Selecciona una opción.
-        </p>
+        <div class="cabecera">
+            <h1 data-i18n="question">¿Cuántas personas están viendo esta reunión contigo?</h1>
+            <p class="subtitulo" data-i18n="selectOption">Selecciona una opción.</p>
+        </div>
 
         <div class="opciones">
             <button class="opcion" data-numero="1">1</button>
@@ -148,16 +144,9 @@
             <button class="opcion" data-numero="10">10</button>
         </div>
 
-        <button id="enviar" data-i18n="send">
-            Enviar respuesta
-        </button>
-
-        <div id="estado" data-i18n="waiting">
-            Esperando a que el anfitrión lance la encuesta...
-        </div>
-
+        <button id="enviar" data-i18n="send">Enviar respuesta</button>
+        <div id="estado" data-i18n="waiting">Esperando a que el anfitrión lance la encuesta...</div>
     </div>
-
 </div>
 
 <script>
@@ -167,6 +156,7 @@
     let yaRespondio = false;
     let currentState = "waiting";
 
+    const tarjeta = document.getElementById("tarjeta");
     const botones = document.querySelectorAll(".opcion");
     const enviar = document.getElementById("enviar");
     const estado = document.getElementById("estado");
@@ -176,7 +166,7 @@
     const translations = {
         es: {
             pageTitle: "Encuesta",
-            question: "¿Cuántas personas están viendo esta reunión físicamente contigo?",
+            question: "¿Cuántas personas están viendo esta reunión contigo?",
             selectOption: "Selecciona una opción.",
             send: "Enviar respuesta",
             waiting: "Esperando a que el anfitrión lance la encuesta...",
@@ -190,7 +180,7 @@
         },
         en: {
             pageTitle: "Survey",
-            question: "How many people are physically watching this meeting with you?",
+            question: "How many people are watching this meeting with you?",
             selectOption: "Select an option.",
             send: "Submit response",
             waiting: "Waiting for the host to launch the survey...",
@@ -204,7 +194,7 @@
         },
         de: {
             pageTitle: "Umfrage",
-            question: "Wie viele Personen sehen diese Besprechung physisch mit Ihnen?",
+            question: "Wie viele Personen sehen diese Besprechung mit Ihnen?",
             selectOption: "Wählen Sie eine Option.",
             send: "Antwort senden",
             waiting: "Warten auf den Start der Umfrage durch den Gastgeber...",
@@ -218,7 +208,7 @@
         },
         fr: {
             pageTitle: "Sondage",
-            question: "Combien de personnes regardent physiquement cette réunion avec vous ?",
+            question: "Combien de personnes regardent cette réunion avec vous ?",
             selectOption: "Sélectionnez une option.",
             send: "Envoyer la réponse",
             waiting: "En attente du lancement du sondage par l'hôte...",
@@ -232,7 +222,7 @@
         },
         it: {
             pageTitle: "Sondaggio",
-            question: "Quante persone stanno guardando fisicamente questa riunione con te?",
+            question: "Quante persone stanno guardando questa riunione con te?",
             selectOption: "Seleziona un'opzione.",
             send: "Invia risposta",
             waiting: "In attesa che l'host avvii il sondaggio...",
@@ -246,7 +236,7 @@
         },
         pt: {
             pageTitle: "Pesquisa",
-            question: "Quantas pessoas estão assistindo fisicamente a esta reunião com você?",
+            question: "Quantas pessoas estão assistindo a esta reunião com você?",
             selectOption: "Selecione uma opção.",
             send: "Enviar resposta",
             waiting: "Aguardando o anfitrião iniciar a pesquisa...",
@@ -261,7 +251,7 @@
     };
 
     function t(key, values = {}) {
-        let text = translations[idioma.value][key];
+        let text = translations[idioma.value][key] || key;
         Object.entries(values).forEach(([name, value]) => {
             text = text.replace(`{${name}}`, value);
         });
@@ -279,6 +269,8 @@
         else if (currentState === "ended") estado.textContent = t("ended");
         else if (currentState === "sent") estado.textContent = t("sent", { n: seleccion });
         else if (currentState === "already") estado.textContent = t("already");
+        else if (currentState === "selectFirst") estado.textContent = t("selectFirst");
+        else if (currentState === "notLaunched") estado.textContent = t("notLaunched");
         else estado.textContent = t("waiting");
     }
 
@@ -296,19 +288,22 @@
     enviar.addEventListener("click", () => {
         if (!encuestaActiva) {
             currentState = "notLaunched";
-            estado.textContent = t("notLaunched");
+            applyLanguage();
             return;
         }
+
         if (yaRespondio) {
             currentState = "already";
-            estado.textContent = t("already");
+            applyLanguage();
             return;
         }
+
         if (seleccion === null) {
             currentState = "selectFirst";
-            estado.textContent = t("selectFirst");
+            applyLanguage();
             return;
         }
+
         socket.emit("enviarRespuesta", seleccion);
     });
 
@@ -323,6 +318,7 @@
         yaRespondio = false;
         seleccion = null;
         currentState = "active";
+        tarjeta.hidden = false;
         botones.forEach((boton) => {
             boton.disabled = false;
             boton.classList.remove("seleccionado");
@@ -333,8 +329,11 @@
     socket.on("encuestaCerrada", () => {
         encuestaActiva = false;
         currentState = "ended";
-        estado.textContent = t("ended");
         botones.forEach((boton) => boton.disabled = true);
+        applyLanguage();
+        setTimeout(() => {
+            tarjeta.hidden = true;
+        }, 250);
     });
 
     socket.on("respuestaAceptada", (datos) => {
@@ -345,25 +344,28 @@
     });
 
     socket.on("errorEncuesta", (mensaje) => {
-        estado.textContent = t("error", { message: mensaje });
+        estado.textContent = mensaje;
     });
 
     function actualizarPantalla() {
         if (yaRespondio) {
             currentState = "already";
-            estado.textContent = t("already");
+            tarjeta.hidden = false;
             botones.forEach((boton) => boton.disabled = true);
+            applyLanguage();
             return;
         }
+
         if (encuestaActiva) {
             currentState = "active";
-            estado.textContent = t("active");
+            tarjeta.hidden = false;
             botones.forEach((boton) => boton.disabled = false);
         } else {
             currentState = "waiting";
-            estado.textContent = t("waiting");
-            botones.forEach((boton) => boton.disabled = true);
+            tarjeta.hidden = true;
         }
+
+        applyLanguage();
     }
 
     applyLanguage();
