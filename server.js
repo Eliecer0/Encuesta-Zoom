@@ -9,6 +9,41 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
+// Encabezados de seguridad requeridos por Zoom Apps
+app.use((req, res, next) => {
+    res.setHeader(
+        "Strict-Transport-Security",
+        "max-age=31536000"
+    );
+
+    res.setHeader(
+        "X-Content-Type-Options",
+        "nosniff"
+    );
+
+    res.setHeader(
+        "Referrer-Policy",
+        "strict-origin-when-cross-origin"
+    );
+
+    res.setHeader(
+        "Content-Security-Policy",
+        [
+            "default-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "script-src 'self' https://appssdk.zoom.us 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline'",
+            "connect-src 'self' ws: wss:",
+            "img-src 'self' data:",
+            "font-src 'self'",
+            "frame-ancestors https://*.zoom.us https://*.zoomdev.us"
+        ].join("; ")
+    );
+
+    next();
+});
+
 // Servir nuestra aplicación
 app.use(express.static(path.join(__dirname, "public")));
 
