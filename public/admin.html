@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">Administrador - Encuesta Zoom</title>
     <script src="/socket.io/socket.io.js"></script>
-
+    <script src="https://appssdk.zoom.us/sdk.min.js"></script>
     <style>
         * { box-sizing: border-box; }
 
@@ -191,6 +191,29 @@
 
 <script>
     const socket = io();
+    let zoomDisponible = false;
+
+async function configurarZoom() {
+    try {
+        await zoomSdk.config({
+            version: "0.16",
+            capabilities: [
+                "getUserContext",
+                "getMeetingUUID",
+                "startCollaborate",
+                "endCollaborate",
+                "onCollaborateChange"
+            ]
+        });
+
+        zoomDisponible = true;
+        console.log("Zoom SDK configurado correctamente.");
+    } catch (error) {
+        console.error("Error configurando Zoom SDK:", error);
+    }
+}
+
+configurarZoom();
     const respuestas = document.getElementById("respuestas");
     const personas = document.getElementById("personas");
     const total = document.getElementById("total");
@@ -311,9 +334,23 @@
         total.textContent = datos.totalPersonas;
     }
 
-    lanzar.addEventListener("click", () => {
-        socket.emit("lanzarEncuesta");
-    });
+    lanzar.addEventListener("click", async () => {
+    socket.emit("lanzarEncuesta");
+
+    if (!zoomDisponible) {
+        return;
+    }
+
+    try {
+        await zoomSdk.startCollaborate({
+            shareScreen: false
+        });
+
+        console.log("Collaborate Mode iniciado.");
+    } catch (error) {
+        console.error("Error al iniciar Collaborate Mode:", error);
+    }
+});
 
     cerrar.addEventListener("click", () => {
         socket.emit("cerrarEncuesta");
