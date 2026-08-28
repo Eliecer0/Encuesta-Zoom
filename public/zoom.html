@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Encuesta Zoom</title>
 
     <script src="https://appssdk.zoom.us/sdk.min.js"></script>
@@ -14,28 +15,57 @@
 
 <script>
 async function iniciar() {
+
     try {
+
         await zoomSdk.config({
             capabilities: [
                 "getRunningContext",
-                "getMeetingContext"
+                "getUserContext",
+                "getMeetingUUID"
             ]
         });
 
-        /*
-         * Todavía no vamos a decidir el rol aquí.
-         * Primero comprobamos que Zoom pueda abrir
-         * correctamente nuestra aplicación.
-         */
+        const usuario = await zoomSdk.getUserContext();
+        const reunion = await zoomSdk.getMeetingUUID();
 
-        document.getElementById("estado").textContent =
-            "Aplicación de Zoom iniciada correctamente.";
+        console.log("Usuario:", usuario);
+        console.log("Reunión:", reunion);
+
+        const rol = usuario.role;
+
+        // Guardamos el identificador de la reunión
+        // para que el servidor pueda separar cada reunión.
+        if (reunion && reunion.meetingUUID) {
+
+            sessionStorage.setItem(
+                "meetingUUID",
+                reunion.meetingUUID
+            );
+
+        }
+
+        // Anfitrión o coanfitrión
+        if (rol === "host" || rol === "coHost") {
+
+            window.location.href = "/admin.html";
+
+        } else {
+
+            // Participante
+            window.location.href = "/participante.html";
+
+        }
 
     } catch (error) {
-        console.error(error);
+
+        console.error(
+            "Error al iniciar la Zoom App:",
+            error
+        );
 
         document.getElementById("estado").textContent =
-            "Esta página debe ejecutarse dentro de Zoom.";
+            "No se pudo iniciar la aplicación.";
     }
 }
 
