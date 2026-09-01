@@ -198,12 +198,10 @@ async function configurarZoom() {
         await zoomSdk.config({
             version: "0.16",
             capabilities: [
-                "getUserContext",
-                "getMeetingUUID",
-                "startCollaborate",
-                "endCollaborate",
-                "onCollaborateChange"
-            ]
+    "getUserContext",
+    "getMeetingUUID",
+    "sendMessageToChat"
+]
         });
 
         zoomDisponible = true;
@@ -342,13 +340,17 @@ configurarZoom();
     }
 
     try {
-        await zoomSdk.startCollaborate({
-            shareScreen: false
+        await zoomSdk.sendMessageToChat({
+            message:
+                "Vota tu asistencia aquí: https://encuesta-zoom.onrender.com/participante.html"
         });
 
-        console.log("Collaborate Mode iniciado.");
+        console.log("Enlace enviado al chat de la reunión.");
     } catch (error) {
-        console.error("Error al iniciar Collaborate Mode:", error);
+        console.error(
+            "No se pudo enviar el enlace al chat:",
+            error
+        );
     }
 });
 
