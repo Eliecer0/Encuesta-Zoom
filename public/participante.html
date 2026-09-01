@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title id="pageTitle">Encuesta</title>
+
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -31,7 +36,7 @@
             background: white;
             border-radius: 20px;
             padding: 27px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
 
         .idioma {
@@ -79,22 +84,42 @@
             background: #e5e7eb;
             color: #111827;
             cursor: pointer;
+            transition: 0.15s;
         }
 
-        .opcion:hover:not(:disabled) { background: #dbe1ea; }
-        .opcion.seleccionado { background: #2d8cff; color: white; }
-        .opcion:disabled { cursor: not-allowed; opacity: .6; }
+        .opcion:hover:not(:disabled) {
+            background: #dbe1ea;
+        }
 
-        #enviar {
+        .opcion.seleccionado {
+            background: #2d8cff;
+            color: white;
+        }
+
+        .opcion:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .boton {
             width: 100%;
             border: 0;
             border-radius: 12px;
             padding: 15px;
-            margin-top: 22px;
-            background: #2d8cff;
-            color: white;
+            margin-top: 14px;
             font-size: 17px;
             cursor: pointer;
+        }
+
+        #enviar {
+            background: #2d8cff;
+            color: white;
+        }
+
+        #cambiar {
+            background: #e5e7eb;
+            color: #111827;
+            display: none;
         }
 
         #estado {
@@ -107,269 +132,874 @@
         }
 
         @media (max-width: 520px) {
-            .cabecera { padding-left: 0; padding-right: 0; }
-            h1 { font-size: 23px; }
+
+            .cabecera {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
         }
     </style>
 </head>
 
 <body>
-<div class="contenedor">
-    <div id="tarjeta" class="tarjeta" hidden>
 
-        <select id="idioma" class="idioma" aria-label="Idioma">
-            <option value="es">Español</option>
-            <option value="en">English</option>
-            <option value="de">Deutsch</option>
-            <option value="fr">Français</option>
-            <option value="it">Italiano</option>
-            <option value="pt">Português</option>
-        </select>
+    <div class="contenedor">
 
-        <div class="cabecera">
-            <h1 data-i18n="question">¿Cuántas personas están viendo esta reunión contigo?</h1>
-            <p class="subtitulo" data-i18n="selectOption">Selecciona una opción.</p>
+        <div id="tarjeta" class="tarjeta" hidden>
+
+            <select id="idioma" class="idioma" aria-label="Idioma">
+
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="it">Italiano</option>
+                <option value="pt">Português</option>
+
+            </select>
+
+            <div class="cabecera">
+
+                <h1 data-i18n="question">
+                    ¿Cuántas personas están viendo esta reunión contigo?
+                </h1>
+
+                <p
+                    class="subtitulo"
+                    data-i18n="selectOption"
+                >
+                    Selecciona una opción.
+                </p>
+
+            </div>
+
+            <div class="opciones">
+
+                <button class="opcion" data-numero="1">1</button>
+                <button class="opcion" data-numero="2">2</button>
+                <button class="opcion" data-numero="3">3</button>
+                <button class="opcion" data-numero="4">4</button>
+                <button class="opcion" data-numero="5">5</button>
+
+                <button class="opcion" data-numero="6">6</button>
+                <button class="opcion" data-numero="7">7</button>
+                <button class="opcion" data-numero="8">8</button>
+                <button class="opcion" data-numero="9">9</button>
+                <button class="opcion" data-numero="10">10</button>
+
+            </div>
+
+            <button
+                id="enviar"
+                class="boton"
+                data-i18n="send"
+            >
+                Enviar respuesta
+            </button>
+
+            <button
+                id="cambiar"
+                class="boton"
+                type="button"
+                data-i18n="change"
+            >
+                Cambiar respuesta
+            </button>
+
+            <div
+                id="estado"
+                data-i18n="waiting"
+            >
+                Esperando a que el anfitrión lance la encuesta...
+            </div>
+
         </div>
 
-        <div class="opciones">
-            <button class="opcion" data-numero="1">1</button>
-            <button class="opcion" data-numero="2">2</button>
-            <button class="opcion" data-numero="3">3</button>
-            <button class="opcion" data-numero="4">4</button>
-            <button class="opcion" data-numero="5">5</button>
-            <button class="opcion" data-numero="6">6</button>
-            <button class="opcion" data-numero="7">7</button>
-            <button class="opcion" data-numero="8">8</button>
-            <button class="opcion" data-numero="9">9</button>
-            <button class="opcion" data-numero="10">10</button>
-        </div>
-
-        <button id="enviar" data-i18n="send">Enviar respuesta</button>
-        <div id="estado" data-i18n="waiting">Esperando a que el anfitrión lance la encuesta...</div>
     </div>
-</div>
 
-<script>
-    const socket = io();
-    let seleccion = null;
-    let encuestaActiva = false;
-    let yaRespondio = false;
-    let currentState = "waiting";
+    <script>
 
-    const tarjeta = document.getElementById("tarjeta");
-    const botones = document.querySelectorAll(".opcion");
-    const enviar = document.getElementById("enviar");
-    const estado = document.getElementById("estado");
-    const idioma = document.getElementById("idioma");
-    const pageTitle = document.getElementById("pageTitle");
+        // ====================================
+        // SOCKET.IO
+        // ====================================
 
-    const translations = {
-        es: {
-            pageTitle: "Encuesta",
-            question: "¿Cuántas personas están viendo esta reunión contigo?",
-            selectOption: "Selecciona una opción.",
-            send: "Enviar respuesta",
-            waiting: "Esperando a que el anfitrión lance la encuesta...",
-            active: "La encuesta está activa. Elige un número.",
-            ended: "La encuesta ha terminado.",
-            sent: "Respuesta enviada: {n}",
-            already: "Ya enviaste tu respuesta.",
-            notLaunched: "La encuesta todavía no ha sido lanzada.",
-            selectFirst: "Selecciona un número primero.",
-            error: "{message}"
-        },
-        en: {
-            pageTitle: "Survey",
-            question: "How many people are watching this meeting with you?",
-            selectOption: "Select an option.",
-            send: "Submit response",
-            waiting: "Waiting for the host to launch the survey...",
-            active: "The survey is active. Choose a number.",
-            ended: "The survey has ended.",
-            sent: "Response submitted: {n}",
-            already: "You have already submitted your response.",
-            notLaunched: "The survey has not been launched yet.",
-            selectFirst: "Select a number first.",
-            error: "{message}"
-        },
-        de: {
-            pageTitle: "Umfrage",
-            question: "Wie viele Personen sehen diese Besprechung mit Ihnen?",
-            selectOption: "Wählen Sie eine Option.",
-            send: "Antwort senden",
-            waiting: "Warten auf den Start der Umfrage durch den Gastgeber...",
-            active: "Die Umfrage ist aktiv. Wählen Sie eine Zahl.",
-            ended: "Die Umfrage ist beendet.",
-            sent: "Antwort gesendet: {n}",
-            already: "Sie haben Ihre Antwort bereits gesendet.",
-            notLaunched: "Die Umfrage wurde noch nicht gestartet.",
-            selectFirst: "Wählen Sie zuerst eine Zahl.",
-            error: "{message}"
-        },
-        fr: {
-            pageTitle: "Sondage",
-            question: "Combien de personnes regardent cette réunion avec vous ?",
-            selectOption: "Sélectionnez une option.",
-            send: "Envoyer la réponse",
-            waiting: "En attente du lancement du sondage par l'hôte...",
-            active: "Le sondage est actif. Choisissez un nombre.",
-            ended: "Le sondage est terminé.",
-            sent: "Réponse envoyée : {n}",
-            already: "Vous avez déjà envoyé votre réponse.",
-            notLaunched: "Le sondage n'a pas encore été lancé.",
-            selectFirst: "Sélectionnez d'abord un nombre.",
-            error: "{message}"
-        },
-        it: {
-            pageTitle: "Sondaggio",
-            question: "Quante persone stanno guardando questa riunione con te?",
-            selectOption: "Seleziona un'opzione.",
-            send: "Invia risposta",
-            waiting: "In attesa che l'host avvii il sondaggio...",
-            active: "Il sondaggio è attivo. Scegli un numero.",
-            ended: "Il sondaggio è terminato.",
-            sent: "Risposta inviata: {n}",
-            already: "Hai già inviato la tua risposta.",
-            notLaunched: "Il sondaggio non è ancora stato avviato.",
-            selectFirst: "Seleziona prima un numero.",
-            error: "{message}"
-        },
-        pt: {
-            pageTitle: "Pesquisa",
-            question: "Quantas pessoas estão assistindo a esta reunião com você?",
-            selectOption: "Selecione uma opção.",
-            send: "Enviar resposta",
-            waiting: "Aguardando o anfitrião iniciar a pesquisa...",
-            active: "A pesquisa está ativa. Escolha um número.",
-            ended: "A pesquisa terminou.",
-            sent: "Resposta enviada: {n}",
-            already: "Você já enviou sua resposta.",
-            notLaunched: "A pesquisa ainda não foi iniciada.",
-            selectFirst: "Selecione um número primeiro.",
-            error: "{message}"
+        const socket = io();
+
+        // ====================================
+        // VARIABLES
+        // ====================================
+
+        let seleccion = null;
+        let encuestaActiva = false;
+        let yaRespondio = false;
+        let modoCambio = false;
+        let currentState = "waiting";
+
+        // ====================================
+        // ELEMENTOS
+        // ====================================
+
+        const tarjeta =
+            document.getElementById("tarjeta");
+
+        const botones =
+            document.querySelectorAll(".opcion");
+
+        const enviar =
+            document.getElementById("enviar");
+
+        const cambiar =
+            document.getElementById("cambiar");
+
+        const estado =
+            document.getElementById("estado");
+
+        const idioma =
+            document.getElementById("idioma");
+
+        const pageTitle =
+            document.getElementById("pageTitle");
+
+        // ====================================
+        // TRADUCCIONES
+        // ====================================
+
+        const translations = {
+
+            es: {
+
+                pageTitle: "Encuesta",
+
+                question:
+                    "¿Cuántas personas están viendo esta reunión contigo?",
+
+                selectOption:
+                    "Selecciona una opción.",
+
+                send:
+                    "Enviar respuesta",
+
+                change:
+                    "Cambiar respuesta",
+
+                saveChange:
+                    "Guardar cambio",
+
+                waiting:
+                    "Esperando a que el anfitrión lance la encuesta...",
+
+                active:
+                    "La encuesta está activa. Elige un número.",
+
+                ended:
+                    "La encuesta ha terminado.",
+
+                sent:
+                    "Respuesta enviada: {n}",
+
+                selectFirst:
+                    "Selecciona un número primero.",
+
+                already:
+                    "Ya enviaste tu respuesta.",
+
+                notLaunched:
+                    "La encuesta todavía no ha sido lanzada.",
+
+                selectingNew:
+                    "Selecciona tu nueva respuesta.",
+
+                error:
+                    "{message}"
+            },
+
+            en: {
+
+                pageTitle: "Survey",
+
+                question:
+                    "How many people are watching this meeting with you?",
+
+                selectOption:
+                    "Select an option.",
+
+                send:
+                    "Submit response",
+
+                change:
+                    "Change response",
+
+                saveChange:
+                    "Save change",
+
+                waiting:
+                    "Waiting for the host to launch the survey...",
+
+                active:
+                    "The survey is active. Choose a number.",
+
+                ended:
+                    "The survey has ended.",
+
+                sent:
+                    "Response submitted: {n}",
+
+                selectFirst:
+                    "Select a number first.",
+
+                already:
+                    "You have already submitted your response.",
+
+                notLaunched:
+                    "The survey has not been launched yet.",
+
+                selectingNew:
+                    "Select your new response.",
+
+                error:
+                    "{message}"
+            },
+
+            de: {
+
+                pageTitle: "Umfrage",
+
+                question:
+                    "Wie viele Personen sehen diese Besprechung mit Ihnen?",
+
+                selectOption:
+                    "Wählen Sie eine Option.",
+
+                send:
+                    "Antwort senden",
+
+                change:
+                    "Antwort ändern",
+
+                saveChange:
+                    "Änderung speichern",
+
+                waiting:
+                    "Warten auf den Start der Umfrage durch den Gastgeber...",
+
+                active:
+                    "Die Umfrage ist aktiv. Wählen Sie eine Zahl.",
+
+                ended:
+                    "Die Umfrage ist beendet.",
+
+                sent:
+                    "Antwort gesendet: {n}",
+
+                selectFirst:
+                    "Wählen Sie zuerst eine Zahl.",
+
+                already:
+                    "Sie haben Ihre Antwort bereits gesendet.",
+
+                notLaunched:
+                    "Die Umfrage wurde noch nicht gestartet.",
+
+                selectingNew:
+                    "Wählen Sie Ihre neue Antwort.",
+
+                error:
+                    "{message}"
+            },
+
+            fr: {
+
+                pageTitle: "Sondage",
+
+                question:
+                    "Combien de personnes regardent cette réunion avec vous ?",
+
+                selectOption:
+                    "Sélectionnez une option.",
+
+                send:
+                    "Envoyer la réponse",
+
+                change:
+                    "Modifier la réponse",
+
+                saveChange:
+                    "Enregistrer la modification",
+
+                waiting:
+                    "En attente du lancement du sondage par l'hôte...",
+
+                active:
+                    "Le sondage est actif. Choisissez un nombre.",
+
+                ended:
+                    "Le sondage est terminé.",
+
+                sent:
+                    "Réponse envoyée : {n}",
+
+                selectFirst:
+                    "Sélectionnez d'abord un nombre.",
+
+                already:
+                    "Vous avez déjà envoyé votre réponse.",
+
+                notLaunched:
+                    "Le sondage n'a pas encore été lancé.",
+
+                selectingNew:
+                    "Sélectionnez votre nouvelle réponse.",
+
+                error:
+                    "{message}"
+            },
+
+            it: {
+
+                pageTitle: "Sondaggio",
+
+                question:
+                    "Quante persone stanno guardando questa riunione con te?",
+
+                selectOption:
+                    "Seleziona un'opzione.",
+
+                send:
+                    "Invia risposta",
+
+                change:
+                    "Modifica risposta",
+
+                saveChange:
+                    "Salva modifica",
+
+                waiting:
+                    "In attesa che l'host avvii il sondaggio...",
+
+                active:
+                    "Il sondaggio è attivo. Scegli un numero.",
+
+                ended:
+                    "Il sondaggio è terminato.",
+
+                sent:
+                    "Risposta inviata: {n}",
+
+                selectFirst:
+                    "Seleziona prima un numero.",
+
+                already:
+                    "Hai già inviato la tua risposta.",
+
+                notLaunched:
+                    "Il sondaggio non è ancora stato avviato.",
+
+                selectingNew:
+                    "Seleziona la tua nuova risposta.",
+
+                error:
+                    "{message}"
+            },
+
+            pt: {
+
+                pageTitle: "Pesquisa",
+
+                question:
+                    "Quantas pessoas estão assistindo a esta reunião com você?",
+
+                selectOption:
+                    "Selecione uma opção.",
+
+                send:
+                    "Enviar resposta",
+
+                change:
+                    "Alterar resposta",
+
+                saveChange:
+                    "Salvar alteração",
+
+                waiting:
+                    "Aguardando o anfitrião iniciar a pesquisa...",
+
+                active:
+                    "A pesquisa está ativa. Escolha um número.",
+
+                ended:
+                    "A pesquisa terminou.",
+
+                sent:
+                    "Resposta enviada: {n}",
+
+                selectFirst:
+                    "Selecione um número primeiro.",
+
+                already:
+                    "Você já enviou sua resposta.",
+
+                notLaunched:
+                    "A pesquisa ainda não foi iniciada.",
+
+                selectingNew:
+                    "Selecione sua nova resposta.",
+
+                error:
+                    "{message}"
+            }
+
+        };
+
+        // ====================================
+        // TRADUCTOR
+        // ====================================
+
+        function t(key, values = {}) {
+
+            let text =
+                translations[idioma.value][key] ||
+                translations.es[key] ||
+                key;
+
+            Object.entries(values).forEach(
+                ([name, value]) => {
+
+                    text =
+                        text.replace(
+                            `{${name}}`,
+                            value
+                        );
+                }
+            );
+
+            return text;
         }
-    };
 
-    function t(key, values = {}) {
-        let text = translations[idioma.value][key] || key;
-        Object.entries(values).forEach(([name, value]) => {
-            text = text.replace(`{${name}}`, value);
-        });
-        return text;
-    }
+        // ====================================
+        // APLICAR IDIOMA
+        // ====================================
 
-    function applyLanguage() {
-        document.documentElement.lang = idioma.value;
-        pageTitle.textContent = t("pageTitle");
-        document.querySelectorAll("[data-i18n]").forEach((element) => {
-            element.textContent = t(element.dataset.i18n);
-        });
+        function applyLanguage() {
 
-        if (currentState === "active") estado.textContent = t("active");
-        else if (currentState === "ended") estado.textContent = t("ended");
-        else if (currentState === "sent") estado.textContent = t("sent", { n: seleccion });
-        else if (currentState === "already") estado.textContent = t("already");
-        else if (currentState === "selectFirst") estado.textContent = t("selectFirst");
-        else if (currentState === "notLaunched") estado.textContent = t("notLaunched");
-        else estado.textContent = t("waiting");
-    }
+            document.documentElement.lang =
+                idioma.value;
 
-    idioma.addEventListener("change", applyLanguage);
+            pageTitle.textContent =
+                t("pageTitle");
 
-    botones.forEach((boton) => {
-        boton.addEventListener("click", () => {
-            if (!encuestaActiva || yaRespondio) return;
-            botones.forEach((b) => b.classList.remove("seleccionado"));
-            boton.classList.add("seleccionado");
-            seleccion = Number(boton.dataset.numero);
-        });
-    });
+            document
+                .querySelectorAll("[data-i18n]")
+                .forEach((element) => {
 
-    enviar.addEventListener("click", () => {
-        if (!encuestaActiva) {
-            currentState = "notLaunched";
-            applyLanguage();
-            return;
+                    element.textContent =
+                        t(element.dataset.i18n);
+
+                });
+
+            if (currentState === "active") {
+
+                estado.textContent =
+                    t("active");
+
+            } else if (currentState === "ended") {
+
+                estado.textContent =
+                    t("ended");
+
+            } else if (currentState === "sent") {
+
+                estado.textContent =
+                    t("sent", {
+                        n: seleccion
+                    });
+
+            } else if (currentState === "selectingNew") {
+
+                estado.textContent =
+                    t("selectingNew");
+
+            } else if (currentState === "selectFirst") {
+
+                estado.textContent =
+                    t("selectFirst");
+
+            } else if (currentState === "already") {
+
+                estado.textContent =
+                    t("already");
+
+            } else if (currentState === "notLaunched") {
+
+                estado.textContent =
+                    t("notLaunched");
+
+            } else {
+
+                estado.textContent =
+                    t("waiting");
+            }
+
+            // Cambiar texto del botón según el modo
+            if (modoCambio) {
+
+                enviar.textContent =
+                    t("saveChange");
+
+            } else {
+
+                enviar.textContent =
+                    t("send");
+            }
         }
 
-        if (yaRespondio) {
-            currentState = "already";
-            applyLanguage();
-            return;
-        }
+        idioma.addEventListener(
+            "change",
+            applyLanguage
+        );
 
-        if (seleccion === null) {
-            currentState = "selectFirst";
-            applyLanguage();
-            return;
-        }
+        // ====================================
+        // SELECCIONAR NÚMERO
+        // ====================================
 
-        socket.emit("enviarRespuesta", seleccion);
-    });
-
-    socket.on("estadoEncuesta", (datos) => {
-        encuestaActiva = datos.encuestaActiva;
-        yaRespondio = datos.yaRespondio;
-        actualizarPantalla();
-    });
-
-    socket.on("encuestaLanzada", () => {
-        encuestaActiva = true;
-        yaRespondio = false;
-        seleccion = null;
-        currentState = "active";
-        tarjeta.hidden = false;
         botones.forEach((boton) => {
-            boton.disabled = false;
-            boton.classList.remove("seleccionado");
+
+            boton.addEventListener(
+                "click",
+                () => {
+
+                    if (!encuestaActiva) {
+                        return;
+                    }
+
+                    if (
+                        yaRespondio &&
+                        !modoCambio
+                    ) {
+                        return;
+                    }
+
+                    botones.forEach(
+                        (b) =>
+                            b.classList.remove(
+                                "seleccionado"
+                            )
+                    );
+
+                    boton.classList.add(
+                        "seleccionado"
+                    );
+
+                    seleccion =
+                        Number(
+                            boton.dataset.numero
+                        );
+                }
+            );
         });
-        applyLanguage();
-    });
 
-    socket.on("encuestaCerrada", () => {
-        encuestaActiva = false;
-        currentState = "ended";
-        botones.forEach((boton) => boton.disabled = true);
-        applyLanguage();
-        setTimeout(() => {
-            tarjeta.hidden = true;
-        }, 250);
-    });
+        // ====================================
+        // ENVIAR / GUARDAR RESPUESTA
+        // ====================================
 
-    socket.on("respuestaAceptada", (datos) => {
-        yaRespondio = true;
-        currentState = "sent";
-        botones.forEach((boton) => boton.disabled = true);
-        estado.textContent = t("sent", { n: datos.cantidad });
-    });
+        enviar.addEventListener(
+            "click",
+            () => {
 
-    socket.on("errorEncuesta", (mensaje) => {
-        estado.textContent = mensaje;
-    });
+                if (!encuestaActiva) {
 
-    function actualizarPantalla() {
-        if (yaRespondio) {
-            currentState = "already";
-            tarjeta.hidden = false;
-            botones.forEach((boton) => boton.disabled = true);
+                    currentState =
+                        "notLaunched";
+
+                    applyLanguage();
+
+                    return;
+                }
+
+                if (
+                    seleccion === null
+                ) {
+
+                    currentState =
+                        "selectFirst";
+
+                    applyLanguage();
+
+                    return;
+                }
+
+                /*
+                    Tanto la primera respuesta como
+                    el cambio utilizan el mismo evento.
+
+                    El servidor sabe si existe una
+                    respuesta anterior y la sustituye.
+                */
+
+                socket.emit(
+                    "enviarRespuesta",
+                    seleccion
+                );
+            }
+        );
+
+        // ====================================
+        // CAMBIAR RESPUESTA
+        // ====================================
+
+        cambiar.addEventListener(
+            "click",
+            () => {
+
+                if (!encuestaActiva) {
+                    return;
+                }
+
+                modoCambio = true;
+
+                yaRespondio = false;
+
+                seleccion = null;
+
+                botones.forEach(
+                    (boton) => {
+
+                        boton.disabled = false;
+
+                        boton.classList.remove(
+                            "seleccionado"
+                        );
+                    }
+                );
+
+                cambiar.style.display =
+                    "none";
+
+                currentState =
+                    "selectingNew";
+
+                applyLanguage();
+            }
+        );
+
+        // ====================================
+        // ESTADO INICIAL
+        // ====================================
+
+        socket.on(
+            "estadoEncuesta",
+            (datos) => {
+
+                encuestaActiva =
+                    datos.encuestaActiva;
+
+                yaRespondio =
+                    datos.yaRespondio;
+
+                actualizarPantalla();
+            }
+        );
+
+        // ====================================
+        // ENCUESTA LANZADA
+        // ====================================
+
+        socket.on(
+            "encuestaLanzada",
+            () => {
+
+                encuestaActiva = true;
+
+                yaRespondio = false;
+
+                modoCambio = false;
+
+                seleccion = null;
+
+                currentState =
+                    "active";
+
+                tarjeta.hidden = false;
+
+                botones.forEach(
+                    (boton) => {
+
+                        boton.disabled = false;
+
+                        boton.classList.remove(
+                            "seleccionado"
+                        );
+                    }
+                );
+
+                cambiar.style.display =
+                    "none";
+
+                applyLanguage();
+            }
+        );
+
+        // ====================================
+        // ENCUESTA CERRADA
+        // ====================================
+
+        socket.on(
+            "encuestaCerrada",
+            () => {
+
+                encuestaActiva = false;
+
+                currentState =
+                    "ended";
+
+                botones.forEach(
+                    (boton) => {
+
+                        boton.disabled = true;
+                    }
+                );
+
+                enviar.disabled = true;
+
+                cambiar.style.display =
+                    "none";
+
+                applyLanguage();
+
+                setTimeout(
+                    () => {
+
+                        tarjeta.hidden = true;
+
+                    },
+                    250
+                );
+            }
+        );
+
+        // ====================================
+        // RESPUESTA ACEPTADA
+        // ====================================
+
+        socket.on(
+            "respuestaAceptada",
+            (datos) => {
+
+                yaRespondio = true;
+
+                modoCambio = false;
+
+                currentState = "sent";
+
+                botones.forEach(
+                    (boton) => {
+
+                        boton.disabled = true;
+                    }
+                );
+
+                enviar.disabled = false;
+
+                cambiar.style.display =
+                    "block";
+
+                enviar.textContent =
+                    t("send");
+
+                estado.textContent =
+                    t(
+                        "sent",
+                        {
+                            n: datos.cantidad
+                        }
+                    );
+            }
+        );
+
+        // ====================================
+        // ERROR DEL SERVIDOR
+        // ====================================
+
+        socket.on(
+            "errorEncuesta",
+            (mensaje) => {
+
+                currentState = "error";
+
+                estado.textContent =
+                    mensaje;
+            }
+        );
+
+        // ====================================
+        // ACTUALIZAR PANTALLA
+        // ====================================
+
+        function actualizarPantalla() {
+
+            enviar.disabled = false;
+
+            if (yaRespondio) {
+
+                currentState =
+                    "already";
+
+                tarjeta.hidden = false;
+
+                botones.forEach(
+                    (boton) => {
+
+                        boton.disabled = true;
+                    }
+                );
+
+                cambiar.style.display =
+                    "block";
+
+                applyLanguage();
+
+                return;
+            }
+
+            if (encuestaActiva) {
+
+                currentState =
+                    "active";
+
+                tarjeta.hidden = false;
+
+                botones.forEach(
+                    (boton) => {
+
+                        boton.disabled = false;
+                    }
+                );
+
+                cambiar.style.display =
+                    "none";
+
+            } else {
+
+                currentState =
+                    "waiting";
+
+                tarjeta.hidden = true;
+            }
+
             applyLanguage();
-            return;
         }
 
-        if (encuestaActiva) {
-            currentState = "active";
-            tarjeta.hidden = false;
-            botones.forEach((boton) => boton.disabled = false);
-        } else {
-            currentState = "waiting";
-            tarjeta.hidden = true;
-        }
+        // ====================================
+        // INICIO
+        // ====================================
 
         applyLanguage();
-    }
 
-    applyLanguage();
-</script>
+    </script>
 
 </body>
+
 </html>
